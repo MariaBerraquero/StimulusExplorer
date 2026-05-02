@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stimulus Explorer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap');
+  :root {
+    --bg: #0f1012; --surface: #181a1e; --surface2: #20232a; --border: #282c34;
+    --text: #e4e5e9; --text-muted: #6b6f7a;
+    --coral: #e05a42; --cyan: #3fb5d2; --amber: #eda630; --green: #4cc281; --purple: #b07de8;
+    --radius: 12px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px; border-bottom: 1px solid var(--border);
+  }
+  .logo-group { display: flex; flex-direction: column; gap: 1px; }
+  .logo-title { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+  .logo-sub { font-size: 16px; font-weight: 800; letter-spacing: 0.04em; }
+  .header-badge { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: var(--text-muted); border: 1px solid var(--border); padding: 4px 11px; border-radius: 20px; }
+
+  main { display: flex; height: calc(100vh - 56px); overflow: hidden; }
+
+  aside {
+    width: 200px; flex-shrink: 0; border-right: 1px solid var(--border);
+    padding: 20px 0; display: flex; flex-direction: column; gap: 2px;
+  }
+  .sidebar-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-muted); padding: 0 20px; margin-bottom: 6px; margin-top: 14px; }
+  .sidebar-label:first-child { margin-top: 0; }
+  .stim-btn {
+    display: flex; align-items: center; gap: 10px; padding: 9px 20px;
+    background: none; border: none; color: var(--text-muted);
+    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; text-align: left; width: 100%;
+  }
+  .stim-btn:hover { color: var(--text); background: var(--surface); }
+  .stim-btn.active { color: var(--text); background: var(--surface2); border-right: 2px solid var(--coral); }
+  .stim-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+  .content { flex: 1; overflow-y: auto; overflow-x: hidden; }
+  .panel { display: none; padding: 28px 32px; }
+  .panel.active { display: block; }
+  .panel-title { font-size: 22px; font-weight: 800; letter-spacing: 0.02em; margin-bottom: 4px; }
+  .panel-desc { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; }
+
+  .config-row { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .cfg-btn {
+    font-family: 'DM Mono', monospace; font-size: 10px; padding: 5px 14px;
+    border-radius: 6px; border: 1px solid var(--border); background: var(--surface);
+    color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+  }
+  .cfg-btn:hover { border-color: var(--text-muted); color: var(--text); }
+  .cfg-btn.sel { border-color: var(--coral); color: var(--coral); background: rgba(224,90,66,0.08); }
+
+  .stim-grid {
+    display: grid; grid-template-columns: 1fr auto 1fr auto 1fr;
+    align-items: center; gap: 0; margin-bottom: 24px;
+  }
+  .stim-card { display: flex; flex-direction: column; align-items: center; }
+  .stim-card canvas { border-radius: var(--radius); border: 1px solid var(--border); background: #808080; }
+  .stim-card-label { margin-top: 10px; text-align: center; }
+  .card-title { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
+  .card-sub { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); }
+  .op-sign { font-size: 28px; font-weight: 800; color: var(--text-muted); padding: 0 14px; user-select: none; }
+
+  .info-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; margin-top: 16px; }
+  .info-box-title { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+  .info-box p { font-size: 12px; color: var(--text-muted); line-height: 1.7; }
+
+  .dur-row { display: flex; gap: 8px; margin-bottom: 20px; align-items: center; }
+  .dur-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); margin-right: 4px; }
+
+  .envelope-row { margin-bottom: 16px; }
+  .envelope-row canvas { border-radius: 6px; border: 1px solid var(--border); background: var(--surface); }
+
+  .snakes-wrap { display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .snakes-wrap img { max-width: 100%; max-height: 520px; border-radius: var(--radius); border: 1px solid var(--border); }
+
+  .legend-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-group">
+    <span class="logo-title">Visual Motion</span>
+    <span class="logo-sub">STIMULUS EXPLORER</span>
+  </div>
+  <span class="header-badge">Instituto de Óptica · CSIC</span>
+</header>
+
+<main>
+  <aside>
+    <div class="sidebar-label">Moving</div>
+    <button class="stim-btn active" onclick="showPanel('plaid1',this)">
+      <span class="stim-dot" style="background:var(--cyan)"></span> Plaid I
+    </button>
+    <button class="stim-btn" onclick="showPanel('plaid2',this)">
+      <span class="stim-dot" style="background:var(--amber)"></span> Plaid II
+    </button>
+    <div class="sidebar-label">Multi-scale</div>
+    <button class="stim-btn" onclick="showPanel('multiscale',this)">
+      <span class="stim-dot" style="background:var(--green)"></span> D&H
+    </button>
+    <div class="sidebar-label">Static illusion</div>
+    <button class="stim-btn" onclick="showPanel('snakes',this)">
+      <span class="stim-dot" style="background:var(--purple)"></span> Rot. Snakes
+    </button>
+  </aside>
+
+  <div class="content">
+
+    <!-- ══════════ PLAID I ══════════ -->
+    <div class="panel active" id="panel-plaid1">
+      <div class="panel-title">Plaid type I</div>
+      <div class="panel-desc">Two gratings at ±45° from pattern direction. Both component constraint lines intersect on the same side. Adelson & Movshon (1982).</div>
+      <div class="config-row" id="p1-cfgs"></div>
+      <div class="stim-grid">
+        <div class="stim-card">
+          <canvas id="c-p1-g1" width="260" height="260"></canvas>
+          <div class="stim-card-label"><div class="card-title">Component 1</div><div class="card-sub" id="lbl-p1-g1"></div></div>
+        </div>
+        <div class="op-sign">+</div>
+        <div class="stim-card">
+          <canvas id="c-p1-g2" width="260" height="260"></canvas>
+          <div class="stim-card-label"><div class="card-title">Component 2</div><div class="card-sub" id="lbl-p1-g2"></div></div>
+        </div>
+        <div class="op-sign">=</div>
+        <div class="stim-card">
+          <canvas id="c-p1-plaid" width="260" height="260"></canvas>
+          <div class="stim-card-label"><div class="card-title">Plaid I</div><div class="card-sub" id="lbl-p1-ioc"></div></div>
+        </div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--coral)"></span>Component motion dir.</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--cyan)"></span>Perceived direction</div>
+      </div>
+      <div class="info-box" style="margin-top:20px;"><div class="info-box-title">About</div>
+        <p>Type I plaids: both constraint lines intersect on the same side as the component velocities. The perceived direction and vector average agree qualitatively. θ₁ = rigdir + 45°, θ₂ = rigdir − 45°.</p>
+      </div>
+    </div>
+
+    <!-- ══════════ PLAID II ══════════ -->
+    <div class="panel" id="panel-plaid2">
+      <div class="panel-title">Plaid type II</div>
+      <div class="panel-desc">Asymmetric plaid — the perceived direction lies in a different quadrant from both components.</div>
+      <div class="config-row" id="p2-cfgs"></div>
+      <div class="stim-grid">
+        <div class="stim-card">
+          <canvas id="c-p2-g1" width="260" height="260"></canvas>
+          <div class="stim-card-label"><div class="card-title">Component 1</div><div class="card-sub" id="lbl-p2-g1"></div></div>
+        </div>
+        <div class="op-sign">+</div>
+        <div class="stim-card">
+          <canvas id="c-p2-g2" width="260" height="260"></canvas>
+          <div class="stim-card-label"><div class="card-title">Component 2</div><div class="card-sub" id="lbl-p2-g2"></div></div>
+        </div>
+        <div class="op-sign">=</div>
+        <div class="stim-card">
+          <canvas id="c-p2-plaid" width="260" height="260"></canvas>
+          <div class="stim-card-label"><div class="card-title">Plaid II</div><div class="card-sub" id="lbl-p2-ioc"></div></div>
+        </div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--coral)"></span>Component motion dir.</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--cyan)"></span>Perceived direction</div>
+      </div>
+      <div class="info-box" style="margin-top:20px;"><div class="info-box-title">About</div>
+        <p>Type II plaids: the perceived (rigid-body) direction lies in a different quadrant from the individual component directions. This is the critical test — the perceived direction differs qualitatively from a simple vector average of the components.</p>
+      </div>
+    </div>
+
+    <!-- ══════════ MULTI-SCALE D&H ══════════ -->
+    <div class="panel" id="panel-multiscale">
+      <div class="panel-title">Multi-scale (D&H)</div>
+      <div class="panel-desc">Derrington & Henning 1987 — 1 cpd (static) + 3 cpd (moving right). Both components modulated by Gaussian temporal window.</div>
+      <div class="dur-row">
+        <span class="dur-label">Duration:</span>
+        <div id="dur-btns"></div>
+      </div>
+      <div class="stim-grid">
+        <div class="stim-card">
+          <canvas id="c-dh-low" width="260" height="260"></canvas>
+          <div class="stim-card-label"><div class="card-title">1 cpd (static)</div><div class="card-sub">No motion</div></div>
+        </div>
+        <div class="op-sign">+</div>
+        <div class="stim-card">
+          <canvas id="c-dh-high" width="260" height="260"></canvas>
+          <div class="stim-card-label"><div class="card-title">3 cpd (moving)</div><div class="card-sub">→ rightward, 12 Hz</div></div>
+        </div>
+        <div class="op-sign">=</div>
+        <div class="stim-card">
+          <canvas id="c-dh-compound" width="260" height="260"></canvas>
+          <div class="stim-card-label"><div class="card-title">Compound</div><div class="card-sub" id="lbl-dh-dur"></div></div>
+        </div>
+      </div>
+      <div class="envelope-row"><canvas id="c-envelope" width="500" height="70"></canvas></div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--green)"></span>Moving comp. direction</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--amber)"></span>Temporal envelope (both)</div>
+      </div>
+      <div class="info-box" style="margin-top:20px;"><div class="info-box-title">About</div>
+        <p>At short durations (&lt;75 ms) the perceived direction reverses — observers see motion opposite to the 3 cpd component. Both the static and moving components appear and disappear together within the Gaussian temporal window.</p>
+      </div>
+    </div>
+
+    <!-- ══════════ ROTATING SNAKES ══════════ -->
+    <div class="panel" id="panel-snakes">
+      <div class="panel-title">Rotating Snakes</div>
+      <div class="panel-desc">Kitaoka's illusion — a static image with asymmetric luminance sequences that triggers illusory motion perception.</div>
+      <div class="snakes-wrap">
+        <img src="rotating_snakes.png" alt="Rotating Snakes illusion by Kitaoka" />
+      </div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-swatch" style="background:#111"></span>Black</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#555"></span>Dark grey</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#eee;border:1px solid #888"></span>White</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#aaa"></span>Light grey</div>
+      </div>
+      <div class="info-box" style="margin-top:20px;"><div class="info-box-title">About</div>
+        <p>A completely static image — no physical motion. The asymmetric luminance sequence (black → dark grey → white → light grey) triggers illusory rotation. Illusory motion follows the B → D → W → L direction within each ring.</p>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════
+// STIMULUS EXPLORER
+// ═══════════════════════════════════════════════════
+
+function showPanel(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  document.querySelectorAll('.stim-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ─── Configurations ───
+// dir = direction of MOTION, standard math: 0°=right, 90°=up, CCW+
+// For plaids: the arrows show each component's motion direction
+// Perceived direction arrow shows where the combined pattern appears to move
+
+const P1 = [
+  { label: 'rigdir 90° (up)', t1: 135, t2: 45, perc: 90, v1: 2, v2: 2 },
+  { label: 'rigdir 0° (right)', t1: 45, t2: -45, perc: 0, v1: 2, v2: 2 },
+  { label: 'rigdir 180° (left)', t1: 225, t2: 135, perc: 180, v1: 2, v2: 2 },
+];
+let p1i = 0;
+
+// Plaid II configs from MATLAB code: [v1, v2, theta1, theta2, perceived_dir]
+// theta = direction of MOTION of each component grating
+// perceived = rigid-body direction (intersection of constraints)
+// Key: perceived direction is in a DIFFERENT quadrant from both components
+const P2 = [
+  { label: 'Config 1', t1: -45, t2: -25, perc: 27.12, v1: 1, v2: 2 },
+  { label: 'Config 2', t1: 50, t2: 35, perc: -25.95, v1: 1, v2: 2 },
+  { label: 'Config 3', t1: -50, t2: -30, perc: 22.12, v1: 1, v2: 2 },
+];
+let p2i = 0;
+
+const DURS = [25, 50, 75, 100, 200];
+let di = 2;
+
+function mkBtns(id, cfgs, sel, cb) {
+  const r = document.getElementById(id);
+  r.innerHTML = '';
+  cfgs.forEach((c, i) => {
+    const b = document.createElement('button');
+    b.className = 'cfg-btn' + (i === sel ? ' sel' : '');
+    b.textContent = c.label || (c + ' ms');
+    b.onclick = () => cb(i);
+    r.appendChild(b);
+  });
+}
+function mkDurBtns() {
+  const r = document.getElementById('dur-btns'); r.innerHTML = '';
+  DURS.forEach((d, i) => {
+    const b = document.createElement('button');
+    b.className = 'cfg-btn' + (i === di ? ' sel' : '');
+    b.textContent = d + ' ms';
+    b.onclick = () => { di = i; mkDurBtns(); updLabels(); };
+    r.appendChild(b);
+  });
+}
+function updLabels() {
+  const c1 = P1[p1i];
+  document.getElementById('lbl-p1-g1').textContent = 'θ₁ = ' + c1.t1 + '°';
+  document.getElementById('lbl-p1-g2').textContent = 'θ₂ = ' + c1.t2 + '°';
+  document.getElementById('lbl-p1-ioc').textContent = 'Perceived = ' + c1.perc + '°';
+  const c2 = P2[p2i];
+  document.getElementById('lbl-p2-g1').textContent = 'θ₁ = ' + c2.t1 + '°';
+  document.getElementById('lbl-p2-g2').textContent = 'θ₂ = ' + c2.t2 + '°';
+  document.getElementById('lbl-p2-ioc').textContent = 'Perceived = ' + c2.perc.toFixed(1) + '°';
+  document.getElementById('lbl-dh-dur').textContent = 'Window: ' + DURS[di] + ' ms';
+}
+function selP1(i) { p1i = i; mkBtns('p1-cfgs', P1, p1i, selP1); updLabels(); }
+function selP2(i) { p2i = i; mkBtns('p2-cfgs', P2, p2i, selP2); updLabels(); }
+mkBtns('p1-cfgs', P1, p1i, selP1);
+mkBtns('p2-cfgs', P2, p2i, selP2);
+mkDurBtns();
+updLabels();
+
+// ═══════════════════════════════════════════════════
+// DRAWING
+// ═══════════════════════════════════════════════════
+
+function drawArrow(ctx, x, y, dirDeg, len, color, lw, hs) {
+  const a = -dirDeg * Math.PI / 180;
+  const ex = x + Math.cos(a) * len, ey = y + Math.sin(a) * len;
+  ctx.save();
+  ctx.strokeStyle = color; ctx.fillStyle = color;
+  ctx.lineWidth = lw || 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ex, ey); ctx.stroke();
+  const s = hs || 10;
+  ctx.beginPath(); ctx.moveTo(ex, ey);
+  ctx.lineTo(ex + Math.cos(a + Math.PI + 0.45)*s, ey + Math.sin(a + Math.PI + 0.45)*s);
+  ctx.lineTo(ex + Math.cos(a + Math.PI - 0.45)*s, ey + Math.sin(a + Math.PI - 0.45)*s);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+// Angle label near arrowhead
+function drawAngleLabel(ctx, cx, cy, dirDeg, dist, text, color) {
+  const a = -dirDeg * Math.PI / 180;
+  const lx = cx + Math.cos(a) * dist;
+  const ly = cy + Math.sin(a) * dist;
+  ctx.font = '700 10px DM Mono, monospace';
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, lx, ly);
+}
+
+function drawGrating(cvs, dirDeg, phase, sf, amp, showArrow, arrowCol) {
+  const ctx = cvs.getContext('2d');
+  const W = cvs.width, H = cvs.height, cx = W/2, cy = H/2, R = W*0.42;
+  const dr = dirDeg * Math.PI / 180;
+  const kx = Math.cos(dr), ky = -Math.sin(dr);
+  const freq = sf * 2 * Math.PI / W;
+  const img = ctx.createImageData(W, H);
+  const d = img.data;
+  for (let py = 0; py < H; py++) {
+    for (let px = 0; px < W; px++) {
+      const dx = px-cx, dy = py-cy;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      const i = (py*W+px)*4;
+      if (dist > R) { d[i]=24; d[i+1]=26; d[i+2]=30; d[i+3]=255; }
+      else {
+        const v = amp * Math.cos(freq*(kx*dx + ky*dy) - phase);
+        const lum = 128 + 127*v;
+        const edge = Math.max(0, Math.min(1, (R-dist)/6));
+        const f = Math.round(128 + (lum-128)*edge);
+        d[i]=f; d[i+1]=f; d[i+2]=f; d[i+3]=255;
+      }
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2);
+  ctx.strokeStyle='#3a3d44'; ctx.lineWidth=1.5; ctx.stroke();
+  if (showArrow) {
+    drawArrow(ctx, cx, cy, dirDeg, R*0.55, arrowCol||'#e05a42', 2.5, 10);
+    drawAngleLabel(ctx, cx, cy, dirDeg, R*0.7+12, dirDeg+'°', arrowCol||'#e05a42');
+  }
+}
+
+function drawPlaid(cvs, d1, ph1, d2, ph2, sf, amp, percDir, percCol) {
+  const ctx = cvs.getContext('2d');
+  const W = cvs.width, H = cvs.height, cx = W/2, cy = H/2, R = W*0.42;
+  const r1 = d1*Math.PI/180, r2 = d2*Math.PI/180;
+  const kx1 = Math.cos(r1), ky1 = -Math.sin(r1);
+  const kx2 = Math.cos(r2), ky2 = -Math.sin(r2);
+  const freq = sf * 2 * Math.PI / W;
+  const img = ctx.createImageData(W, H);
+  const d = img.data;
+  for (let py = 0; py < H; py++) {
+    for (let px = 0; px < W; px++) {
+      const dx = px-cx, dy = py-cy;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      const i = (py*W+px)*4;
+      if (dist > R) { d[i]=24; d[i+1]=26; d[i+2]=30; d[i+3]=255; }
+      else {
+        const v = amp*0.5*(Math.cos(freq*(kx1*dx+ky1*dy)-ph1) + Math.cos(freq*(kx2*dx+ky2*dy)-ph2));
+        const lum = 128 + 127*v;
+        const edge = Math.max(0, Math.min(1, (R-dist)/6));
+        const f = Math.max(0, Math.min(255, Math.round(128+(lum-128)*edge)));
+        d[i]=f; d[i+1]=f; d[i+2]=f; d[i+3]=255;
+      }
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2);
+  ctx.strokeStyle='#3a3d44'; ctx.lineWidth=1.5; ctx.stroke();
+
+  // Component arrows (thin, dashed feel)
+  drawArrow(ctx, cx, cy, d1, R*0.35, 'rgba(224,90,66,0.55)', 1.5, 7);
+  drawArrow(ctx, cx, cy, d2, R*0.35, 'rgba(224,90,66,0.55)', 1.5, 7);
+  // Perceived direction arrow (thick, prominent)
+  drawArrow(ctx, cx, cy, percDir, R*0.6, percCol||'#3fb5d2', 3, 12);
+  drawAngleLabel(ctx, cx, cy, percDir, R*0.72+16, 'Perc.', percCol||'#3fb5d2');
+}
+
+function drawDHComp(cvs, sfCyc, phase, envelope, isMoving) {
+  const ctx = cvs.getContext('2d');
+  const W = cvs.width, H = cvs.height, cx = W/2, cy = H/2, R = W*0.42;
+  const freq = sfCyc * 2 * Math.PI / W;
+  const img = ctx.createImageData(W, H);
+  const d = img.data;
+  for (let py = 0; py < H; py++) {
+    for (let px = 0; px < W; px++) {
+      const dx = px-cx, dy = py-cy;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      const i = (py*W+px)*4;
+      if (dist > R) { d[i]=24; d[i+1]=26; d[i+2]=30; d[i+3]=255; }
+      else {
+        const v = 0.45*envelope*Math.cos(freq*dx - phase);
+        const lum = 128 + 127*v;
+        const edge = Math.max(0, Math.min(1, (R-dist)/6));
+        const f = Math.max(0, Math.min(255, Math.round(128+(lum-128)*edge)));
+        d[i]=f; d[i+1]=f; d[i+2]=f; d[i+3]=255;
+      }
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2);
+  ctx.strokeStyle='#3a3d44'; ctx.lineWidth=1.5; ctx.stroke();
+  if (isMoving && envelope > 0.1) drawArrow(ctx, cx, cy, 0, R*0.5, '#4cc281', 2.5, 10);
+}
+
+function drawDHCompound(cvs, phaseMoving, envelope) {
+  const ctx = cvs.getContext('2d');
+  const W = cvs.width, H = cvs.height, cx = W/2, cy = H/2, R = W*0.42;
+  const fL = 4*2*Math.PI/W, fH = 12*2*Math.PI/W;
+  const sph = 1.3;
+  const img = ctx.createImageData(W, H);
+  const d = img.data;
+  for (let py = 0; py < H; py++) {
+    for (let px = 0; px < W; px++) {
+      const dx = px-cx, dy = py-cy;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      const i = (py*W+px)*4;
+      if (dist > R) { d[i]=24; d[i+1]=26; d[i+2]=30; d[i+3]=255; }
+      else {
+        const v = 0.4*envelope*(Math.cos(fL*dx+sph) + Math.cos(fH*dx-phaseMoving));
+        const lum = 128 + 64*v;
+        const edge = Math.max(0, Math.min(1, (R-dist)/6));
+        const f = Math.max(0, Math.min(255, Math.round(128+(lum-128)*edge)));
+        d[i]=f; d[i+1]=f; d[i+2]=f; d[i+3]=255;
+      }
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2);
+  ctx.strokeStyle='#3a3d44'; ctx.lineWidth=1.5; ctx.stroke();
+}
+
+function drawEnvelope(tMs, total, dur) {
+  const cvs = document.getElementById('c-envelope');
+  const ctx = cvs.getContext('2d');
+  const W = cvs.width, H = cvs.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#181a1e'; ctx.fillRect(0,0,W,H);
+  const p = 30, gw = W-2*p, gh = H-24, gy = 8;
+  const sig = dur/2, tc = total/2;
+  ctx.strokeStyle='#282c34'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(p,gy+gh); ctx.lineTo(p+gw,gy+gh); ctx.stroke();
+  ctx.fillStyle='rgba(237,166,48,0.06)';
+  ctx.beginPath();
+  for (let x=0;x<=gw;x++) { const t=(x/gw)*total,dt=t-tc,e=Math.exp(-0.5*(dt/sig)*(dt/sig)); if(x===0)ctx.moveTo(p+x,gy+gh-e*gh);else ctx.lineTo(p+x,gy+gh-e*gh); }
+  ctx.lineTo(p+gw,gy+gh); ctx.lineTo(p,gy+gh); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='rgba(237,166,48,0.5)'; ctx.lineWidth=2;
+  ctx.beginPath();
+  for (let x=0;x<=gw;x++) { const t=(x/gw)*total,dt=t-tc,e=Math.exp(-0.5*(dt/sig)*(dt/sig)); if(x===0)ctx.moveTo(p+x,gy+gh-e*gh);else ctx.lineTo(p+x,gy+gh-e*gh); }
+  ctx.stroke();
+  const tn=tMs%total, mx=p+(tn/total)*gw, dtm=tn-tc, em=Math.exp(-0.5*(dtm/sig)*(dtm/sig));
+  ctx.fillStyle='#eda630'; ctx.beginPath(); ctx.arc(mx,gy+gh-em*gh,4,0,Math.PI*2); ctx.fill();
+  ctx.font='400 9px DM Mono,monospace'; ctx.fillStyle='#6b6f7a'; ctx.textAlign='center';
+  ctx.fillText('σ = '+sig+' ms · Both components',W/2,gy+gh+14);
+}
+
+// ═══════════════════════════════════════════════════
+// ANIMATION
+// ═══════════════════════════════════════════════════
+const SPD = 0.0018;
+
+function animate(ts) {
+  const t = ts * SPD;
+
+  if (document.getElementById('panel-plaid1').classList.contains('active')) {
+    const c = P1[p1i], sf = 8;
+    drawGrating(document.getElementById('c-p1-g1'), c.t1, t*c.v1, sf, 0.9, true, '#e05a42');
+    drawGrating(document.getElementById('c-p1-g2'), c.t2, t*c.v2, sf, 0.9, true, '#e05a42');
+    drawPlaid(document.getElementById('c-p1-plaid'), c.t1, t*c.v1, c.t2, t*c.v2, sf, 0.9, c.perc, '#3fb5d2');
+  }
+
+  if (document.getElementById('panel-plaid2').classList.contains('active')) {
+    const c = P2[p2i], sf = 8;
+    const ph1 = t * c.v1, ph2 = t * c.v2;
+    drawGrating(document.getElementById('c-p2-g1'), c.t1, ph1, sf, 0.9, true, '#e05a42');
+    drawGrating(document.getElementById('c-p2-g2'), c.t2, ph2, sf, 0.9, true, '#e05a42');
+    drawPlaid(document.getElementById('c-p2-plaid'), c.t1, ph1, c.t2, ph2, sf, 0.9, c.perc, '#3fb5d2');
+  }
+
+  if (document.getElementById('panel-multiscale').classList.contains('active')) {
+    const dur = DURS[di], total = dur*5;
+    const tMs = (ts*0.3) % total;
+    const tc = total/2, sig = dur/2;
+    const env = Math.exp(-0.5*((tMs-tc)/sig)*((tMs-tc)/sig));
+    const phM = ts * 0.003;
+    drawDHComp(document.getElementById('c-dh-low'), 4, 1.3, env, false);
+    drawDHComp(document.getElementById('c-dh-high'), 12, phM, env, true);
+    drawDHCompound(document.getElementById('c-dh-compound'), phM, env);
+    drawEnvelope(tMs, total, dur);
+  }
+
+  requestAnimationFrame(animate);
+}
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
