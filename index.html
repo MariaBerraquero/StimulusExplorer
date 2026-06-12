@@ -178,7 +178,7 @@
       <span class="stim-dot" style="background:var(--purple)"></span> Peripheral drift
     </button>
     <div class="sidebar-label"></div>
-    <button class="stim-btn" onclick="showPanel('snakes',this)">
+    <button class="stim-btn" onclick="showPanel('timereversal',this)">
       <span class="stim-dot" style="background:var(--purple)"></span> Time reversal 
     </button>
   </aside>
@@ -300,11 +300,38 @@
   </div>
   <div class="info-box" style="margin-top:20px;">
     <div class="info-box-title">About</div>
-    <p>The Rotating Snakes experiment is based on the famous illusion by Akiyoshi Kitaoka (2003)...</p>
+    <p>The Peripheral Drift Illusion (PDI) is a motion illusion in which a completely static pattern appears to rotate or drift when viewed with peripheral vision. This effect arises from the interaction between asymmetric luminance gradients in the image and involuntary microsaccadic eye movements, which create transient signals that the visual system misinterprets as real motion. </p>
   </div>
 </div>
 <!-- fin panel-snakes -->
-
+<!-- ══════════ TIME REVERSAL ══════════ -->
+<div class="panel" id="panel-timereversal">
+  <div class="panel-title">Time-reversal symmetry breaking</div>
+  <div class="panel-desc">Wu <em>et al.</em> (PNAS 2025) — stimulus 1H, v = 5 deg/s.</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px;">
+    <div style="display:flex;flex-direction:column;align-items:center;">
+      <video width="320" height="320" loop muted playsinline autoplay
+             style="border-radius:12px;border:1px solid var(--border);background:#000;"
+             src="stimulus_forward.mp4"></video>
+      <div class="stim-card-label">
+        <div class="card-title">Forward (original)</div>
+        <div class="card-sub">Stimulus played as designed</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;">
+      <video width="320" height="320" loop muted playsinline autoplay
+             style="border-radius:12px;border:1px solid var(--border);background:#000;"
+             src="stimulus_reversed.mp4"></video>
+      <div class="stim-card-label">
+        <div class="card-title">Time-reversed</div>
+        <div class="card-sub">Same frames in reverse temporal order</div>
+      </div>
+    </div>
+  </div>
+  <div class="info-box"><div class="info-box-title">About — Wu et al. (PNAS 2025)</div>
+    <p>Time-reversal symmetry breaking refers to the observation that biological motion detectors respond differently to a stimulus played forward versus the same stimulus played in reverse temporal order. Classical models such as the Hassenstein–Reichardt correlator are symmetric under time reversal. Wu et al. (PNAS 2025) showed that <em>Drosophila</em> motion vision strongly violates this symmetry.</p>
+  </div>
+</div>
   </div>
 </main>
 
